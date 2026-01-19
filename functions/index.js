@@ -255,7 +255,7 @@ async function generateVideo(script, apiKey) {
         });
 
         log('Video generation started: ', video);
-        let progress = video.progress ?? 0;
+        let progress = video?.progress ?? 0;
 
         while (video.status === 'in_progress' || video.status === 'queued') {
             video = await openai.videos.retrieve(video.id);

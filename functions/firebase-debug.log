@@ -1,0 +1,83 @@
+[debug] [2026-01-19T11:59:50.316Z] ----------------------------------------------------------------------
+[debug] [2026-01-19T11:59:50.319Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\My pc\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only functions
+[debug] [2026-01-19T11:59:50.319Z] CLI Version:   15.3.1
+[debug] [2026-01-19T11:59:50.319Z] Platform:      win32
+[debug] [2026-01-19T11:59:50.319Z] Node Version:  v24.11.1
+[debug] [2026-01-19T11:59:50.320Z] Time:          Mon Jan 19 2026 17:29:50 GMT+0530 (India Standard Time)
+[debug] [2026-01-19T11:59:50.320Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-19T11:59:51.810Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-19T11:59:51.810Z] > authorizing via signed-in user (aradhanaoffbeat@gmail.com)
+[info] i  emulators: Starting emulators: functions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: functions"}}
+[debug] [2026-01-19T11:59:51.819Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-19T11:59:51.819Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-01-19T11:59:51.823Z] Write emulator hub locator at C:\Users\MYPC~1\AppData\Local\Temp\hub-admind-adec4.json
+[debug] [2026-01-19T11:59:51.838Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-19T11:59:51.839Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-19T11:59:51.839Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-01-19T11:59:51.839Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, auth, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2026-01-19T11:59:51.866Z] defaultcredentials: writing to file C:\Users\My pc\AppData\Roaming\firebase\aradhanaoffbeat_gmail_com_application_default_credentials.json
+[debug] [2026-01-19T11:59:51.867Z] Setting GAC to C:\Users\My pc\AppData\Roaming\firebase\aradhanaoffbeat_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\My pc\\AppData\\Roaming\\firebase\\aradhanaoffbeat_gmail_com_application_default_credentials.json"}}
+[debug] [2026-01-19T11:59:51.868Z] Checked if tokens are valid: true, expires at: 1768826567563
+[debug] [2026-01-19T11:59:51.869Z] Checked if tokens are valid: true, expires at: 1768826567563
+[debug] [2026-01-19T11:59:51.870Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/admind-adec4/adminSdkConfig [none]
+[debug] [2026-01-19T11:59:53.170Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/admind-adec4/adminSdkConfig 200
+[debug] [2026-01-19T11:59:53.170Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/admind-adec4/adminSdkConfig {"projectId":"admind-adec4","storageBucket":"admind-adec4.firebasestorage.app"}
+[info] i  functions: Watching "C:\Users\My pc\Downloads\services_generateadvideo_1765375410.903000\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\Users\\My pc\\Downloads\\services_generateadvideo_1765375410.903000\\functions\" for Cloud Functions..."}}
+[debug] [2026-01-19T11:59:53.200Z] Validating nodejs source
+[debug] [2026-01-19T11:59:54.079Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/secret-manager": "^6.1.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0",
+    "openai": "^6.16.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.4.1"
+  },
+  "private": true
+}
+[debug] [2026-01-19T11:59:54.079Z] Building nodejs source
+[debug] [2026-01-19T11:59:54.079Z] Failed to find version of module node: reached end of search path C:\Users\My pc\Downloads\services_generateadvideo_1765375410.903000\functions\node_modules
+[info] +  functions: Using node@24 from host. 
+[info] i  functions: Loaded environment variables from .env. 
+[debug] [2026-01-19T11:59:54.082Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-01-19T11:59:54.089Z] Found firebase-functions binary at 'C:\Users\My pc\Downloads\services_generateadvideo_1765375410.903000\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8074
+
+[debug] [2026-01-19T11:59:56.095Z] Got response from /__/functions.yaml {"endpoints":{"generateAdVideo":{"availableMemoryMb":null,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"generateAdVideo"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] +  functions: Loaded functions definitions from source: generateAdVideo. {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: generateAdVideo."}}
+[info] +  functions[us-central1-generateAdVideo]: http function initialized (http://127.0.0.1:5001/admind-adec4/us-central1/generateAdVideo). {"metadata":{"emulator":{"name":"functions"},"message":"\u001b[1mhttp\u001b[22m function initialized (http://127.0.0.1:5001/admind-adec4/us-central1/generateAdVideo)."}}
+[debug] [2026-01-19T12:00:00.147Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌───────────┬────────────────┬─────────────────────────────────┐
+│ Emulator  │ Host:Port      │ View in Emulator UI             │
+├───────────┼────────────────┼─────────────────────────────────┤
+│ Functions │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions │
+└───────────┴────────────────┴─────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
