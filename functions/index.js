@@ -6,6 +6,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { Buffer } from 'node:buffer';
 import 'dotenv/config';
+import nodemailer from 'nodemailer';
 
 
 admin.initializeApp();
@@ -17,10 +18,10 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 function log(event, data = {}) {
-  console.log(`[${event}]`, data);
+    console.log(`[${event}]`, data);
 }
 
-const CONFIRMED_PROJECT_NUMBER = '361070828899'; 
+const CONFIRMED_PROJECT_NUMBER = '361070828899';
 const SECRET_NAME = `projects/${CONFIRMED_PROJECT_NUMBER}/secrets/OPENAI_API_KEY/versions/latest`;
 const client = new SecretManagerServiceClient();
 let cachedOpenaiApiKey = null;
@@ -34,9 +35,9 @@ let cachedOpenaiApiKey = null;
 //   log("API_KEY_FETCHING", { name: SECRET_NAME });
 //   try {
 //     const [version] = await client.accessSecretVersion({ name: SECRET_NAME });
-    
+
 //     const payload = version.payload.data.toString();
-    
+
 //     cachedOpenaiApiKey = payload;
 //     log("API_KEY_FETCHED_SUCCESS");
 //     return payload;
@@ -47,46 +48,46 @@ let cachedOpenaiApiKey = null;
 // }
 
 async function getOpenaiApiKey() {
-  // ✅ LOCAL EMULATOR → use .env
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY missing in .env");
+    // ✅ LOCAL EMULATOR → use .env
+    if (process.env.FUNCTIONS_EMULATOR === "true") {
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error("OPENAI_API_KEY missing in .env");
+        }
+        log("API_KEY_FROM_ENV");
+        return process.env.OPENAI_API_KEY;
     }
-    log("API_KEY_FROM_ENV");
-    return process.env.OPENAI_API_KEY;
-  }
 
-  // ✅ PRODUCTION → use Secret Manager
-  if (cachedOpenaiApiKey) {
-    log("API_KEY_CACHED");
+    // ✅ PRODUCTION → use Secret Manager
+    if (cachedOpenaiApiKey) {
+        log("API_KEY_CACHED");
+        return cachedOpenaiApiKey;
+    }
+
+    log("API_KEY_FETCHING", { name: SECRET_NAME });
+    const [version] = await client.accessSecretVersion({ name: SECRET_NAME });
+
+    cachedOpenaiApiKey = version.payload.data.toString();
+    log("API_KEY_FETCHED_SUCCESS");
+
     return cachedOpenaiApiKey;
-  }
-
-  log("API_KEY_FETCHING", { name: SECRET_NAME });
-  const [version] = await client.accessSecretVersion({ name: SECRET_NAME });
-
-  cachedOpenaiApiKey = version.payload.data.toString();
-  log("API_KEY_FETCHED_SUCCESS");
-
-  return cachedOpenaiApiKey;
 }
 
 const templates = {
-    "KR": { 
+    "KR": {
         "thumbnail_style": "bright colors, bold Korean text",
         "video_style": "dynamic, energetic",
-        "hashtags": ["#한국쇼츠", "#단기광고", "#AI마케팅"] 
+        "hashtags": ["#한국쇼츠", "#단기광고", "#AI마케팅"]
     },
     "US": {
         "thumbnail_style": "clean bold text, strong contrast",
         "video_style": "fast-paced, cinematic",
-        "hashtags": ["#Shorts", "#AIAds", "#MarketingTips"] 
+        "hashtags": ["#Shorts", "#AIAds", "#MarketingTips"]
     },
-    "JP": { 
+    "JP": {
         "thumbnail_style": "minimal, soft tones, Japanese font",
-        "video_style": "slow-motional, subtle transitions", 
-        "hashtags": ["#日本ショート", "#AI広告", "#ビジネス"] 
-        }
+        "video_style": "slow-motional, subtle transitions",
+        "hashtags": ["#日本ショート", "#AI広告", "#ビジネス"]
+    }
 };
 
 async function loadCountryTemplate() {
@@ -94,13 +95,13 @@ async function loadCountryTemplate() {
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
     const selectedTemplate = templates[randomKey];
     if (!selectedTemplate) {
-      throw new Error("Template not found, internal logic error.");
+        throw new Error("Template not found, internal logic error.");
     }
-    return {randomKey, selectedTemplate};
+    return { randomKey, selectedTemplate };
 }
 
 async function generateAIScript(audience, brand, introduction, template, apiKey) {
-  const prompt = `
+    const prompt = `
 The video must be completely generatable from text input.
 
 Use the following details:
@@ -213,7 +214,7 @@ async function downloadAndUploadContent(video, apiKey, userId) {
         });
 
         const thumbnail = await openai.videos.downloadContent(video.id, {
-          variant: "thumbnail"
+            variant: "thumbnail"
         });
 
         const thumbBuffer = Buffer.from(await thumbnail.arrayBuffer());
@@ -221,14 +222,14 @@ async function downloadAndUploadContent(video, apiKey, userId) {
         const uploadedThumnailFile = storage.file(thumbnailUrl);
 
         await uploadedThumnailFile.save(thumbBuffer, {
-          contentType: "images/webp",
-          public: true,
-          metadata: {
-            contentType: 'images/webp',
+            contentType: "images/webp",
+            public: true,
             metadata: {
-                userId: userId,
-            },
-          }
+                contentType: 'images/webp',
+                metadata: {
+                    userId: userId,
+                },
+            }
         });
 
         const videoPublicUrl = uploadedFile.publicUrl();
@@ -286,17 +287,239 @@ async function generateVideo(script, apiKey) {
     }
 }
 
+// 1. REQUEST OTP - Send OTP to user's email
+app.post('/forgotPassword/requestOtp', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                error: "Email is required"
+            });
+        }
+
+        // Check if user exists
+        const userSnapshot = await db.collection('users').where('email', '==', email).get();
+
+        if (userSnapshot.empty) {
+            return res.status(404).json({
+                error: "User not found with this email"
+            });
+        }
+
+        // Generate OTP (6 digits)
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+        // Save OTP to database
+        await db.collection('passwordReset').doc(email).set({
+            email: email,
+            otp: otp,
+            otpExpiry: otpExpiry,
+            verified: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Send OTP via email
+        await sendOtpEmail(email, otp);
+
+        log("OTP_SENT_TO_EMAIL", { email });
+
+        return res.status(200).json({
+            success: true,
+            message: "OTP sent to your email",
+            email: email
+        });
+
+    } catch (error) {
+        log("REQUEST_OTP_FAILED", { error: error.message, stack: error.stack });
+        return res.status(500).json({
+            error: "Failed to send OTP"
+        });
+    }
+});
+
+// 2. VERIFY OTP
+app.post('/forgotPassword/verifyOtp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                error: "Email and OTP are required"
+            });
+        }
+
+        const resetDoc = await db.collection('passwordReset').doc(email).get();
+
+        if (!resetDoc.exists) {
+            return res.status(404).json({
+                error: "No OTP request found for this email"
+            });
+        }
+
+        const resetData = resetDoc.data();
+
+        // Check if OTP is expired
+        if (resetData.otpExpiry < Date.now()) {
+            return res.status(400).json({
+                error: "OTP has expired. Please request a new one"
+            });
+        }
+
+        // Verify OTP
+        if (resetData.otp !== otp) {
+            return res.status(400).json({
+                error: "Invalid OTP"
+            });
+        }
+
+        // Mark OTP as verified
+        await db.collection('passwordReset').doc(email).update({
+            verified: true,
+            verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        log("OTP_VERIFIED", { email });
+
+        return res.status(200).json({
+            success: true,
+            message: "OTP verified successfully"
+        });
+
+    } catch (error) {
+        log("VERIFY_OTP_FAILED", { error: error.message, stack: error.stack });
+        return res.status(500).json({
+            error: "Failed to verify OTP"
+        });
+    }
+});
+
+// 3. RESET PASSWORD
+app.post('/forgotPassword/resetPassword', async (req, res) => {
+    try {
+        const { email, newPassword, confirmPassword } = req.body;
+
+        if (!email || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                error: "Email, new password, and confirm password are required"
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                error: "Passwords do not match"
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                error: "Password must be at least 6 characters long"
+            });
+        }
+
+        // Verify that OTP was verified
+        const resetDoc = await db.collection('passwordReset').doc(email).get();
+
+        if (!resetDoc.exists) {
+            return res.status(404).json({
+                error: "No password reset request found"
+            });
+        }
+
+        if (!resetDoc.data().verified) {
+            return res.status(400).json({
+                error: "OTP not verified. Please verify OTP first"
+            });
+        }
+
+        // Get user by email
+        const userSnapshot = await db.collection('users').where('email', '==', email).get();
+
+        if (userSnapshot.empty) {
+            return res.status(404).json({
+                error: "User not found"
+            });
+        }
+        const userDoc = userSnapshot.docs[0];
+        const userRecord = await admin.auth().updateUser(userDoc.id, {
+            password: newPassword,
+        });
+        // Delete password reset record
+        await db.collection('passwordReset').doc(email).delete();
+
+        log("PASSWORD_RESET_SUCCESSFUL", { email });
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successfully",
+            user: userRecord
+        });
+
+        // const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // // Update password in database
+        // await db.collection('users').doc(userDoc.id).update({
+        //     password: hashedPassword,
+        //     updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        // });
+
+        // Delete password reset record
+        // await db.collection('passwordReset').doc(email).delete();
+
+        // log("PASSWORD_RESET_SUCCESSFUL", { email });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     message: "Password reset successfully"
+        // });
+
+    } catch (error) {
+        log("PASSWORD_RESET_FAILED", { error: error.message, stack: error.stack });
+        return res.status(500).json({
+            error: "Failed to reset password"
+        });
+    }
+});
+
+// Helper function to send OTP email
+async function sendOtpEmail(email, otp) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+        }
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Password Reset OTP',
+        html: `
+            <h2>Password Reset Request</h2>
+            <p>Your OTP for password reset is:</p>
+            <h1 style="color: #007bff; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
+            <p>This OTP will expire in 10 minutes.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+        `
+    };
+
+    return transporter.sendMail(mailOptions);
+}
+
+
+
 app.get('/generateScript', async (req, res) => {
     try {
-        const {audience, brand, introduction, userId} = req.query;
-        console.log("generateScript",audience, brand, introduction, userId);
+        const { audience, brand, introduction, userId } = req.query;
+        console.log("generateScript", audience, brand, introduction, userId);
 
         if (!audience || !brand || !introduction) {
-          return res.status(400).json({
-            error: "Missing required parameters: audience, brand, introduction",
-          });
+            return res.status(400).json({
+                error: "Missing required parameters: audience, brand, introduction",
+            });
         }
-        
+
         log(`brand ${brand}`);
         log(`audience ${audience}`);
         log(`introduction ${introduction}`);
@@ -305,10 +528,10 @@ app.get('/generateScript', async (req, res) => {
 
         // await new Promise(resolve => setTimeout(resolve, 12000));
         // return res.status(200).json({success: true, videoDocument: 'Zk2fLX0frTzOMjTTu8IB',  script: "script", videoUrl: {"_firestore":{"projectId":"admind-adec4"},"_path":{"segments":["videos","Zk2fLX0frTzOMjTTu8IB"]},"_converter":{}}});
-        
+
         const apiKey = await getOpenaiApiKey();
 
-        const {randomKey: selectedCountry, selectedTemplate: template} = await loadCountryTemplate();
+        const { randomKey: selectedCountry, selectedTemplate: template } = await loadCountryTemplate();
 
         log("SCRIPT_GENERATION_STARTED");
         const script = await generateAIScript(audience, brand, introduction, template, apiKey);
@@ -316,11 +539,11 @@ app.get('/generateScript', async (req, res) => {
 
         // log(script);
 
-        if(script != "failed") {
+        if (script != "failed") {
             const videoRef = await db.collection('videos').add({
-                userId: db.doc(userId), 
+                userId: db.doc(userId),
                 country: selectedCountry,
-                template: { 
+                template: {
                     thumbnail_style: template.thumbnail_style,
                     video_style: template.video_style
                 },
@@ -338,31 +561,31 @@ app.get('/generateScript', async (req, res) => {
             });
             log("FIRESTORE_RECORD_SAVED", { videoId: videoRef.id });
 
-            return res.status(200).json({success: true, videoDocument: videoRef.id, videoUrl: videoRef, script: script});
+            return res.status(200).json({ success: true, videoDocument: videoRef.id, videoUrl: videoRef, script: script });
         } else {
-            return res.status(500).json({error: "Failed to generate script"});
+            return res.status(500).json({ error: "Failed to generate script" });
         }
     } catch (error) {
-  log("REQUEST_FAILED", { error: error.message, stack: error.stack });
-}
+        log("REQUEST_FAILED", { error: error.message, stack: error.stack });
+    }
 });
 
 app.get('/generateVideo', async (req, res) => {
     try {
-        const {userId, videoRef} = req.query;
+        const { userId, videoRef } = req.query;
         console.log(userId, videoRef);
         if (!userId || !videoRef) {
-          return res.status(400).json({
-            error: "Missing required parameters: script and video reference",
-          });
+            return res.status(400).json({
+                error: "Missing required parameters: script and video reference",
+            });
         }
-                
+
         log(`userId ${userId}`);
         log(`videoRef ${videoRef}`);
-        
+
         // await new Promise(resolve => setTimeout(resolve, 12000));
         // return res.status(200).json({success: true, videoDocument: db.doc(videoRef).id, videoUrl: db.doc(videoRef)});
-        
+
         const snap = await db.doc(videoRef).get();
 
         const script = snap.data().script;
@@ -370,14 +593,14 @@ app.get('/generateVideo', async (req, res) => {
         const apiKey = await getOpenaiApiKey();
 
         log("VIDEO_GENERATION_STARTED");
-        const video = await generateVideo(script, apiKey); 
+        const video = await generateVideo(script, apiKey);
         log("VIDEO_GENERATION_COMPLETED");
 
-        if(video != "failed") {
+        if (video != "failed") {
             log("VIDEO_SAVING_STARTED");
-            const {videoUrl, thumbnailUrl} = await downloadAndUploadContent(video, apiKey, userId);
+            const { videoUrl, thumbnailUrl } = await downloadAndUploadContent(video, apiKey, userId);
             log("VIDEO_SAVING_FINISHED", { videoUrl });
-            
+
             const docRef = db.doc(videoRef);
 
             await docRef.update({
@@ -390,9 +613,9 @@ app.get('/generateVideo', async (req, res) => {
 
             log("FIRESTORE_RECORD_SAVED", { videoId: docRef.id });
 
-            return res.status(200).json({success: true, videoDocument: docRef.id, videoUrl: docRef});
+            return res.status(200).json({ success: true, videoDocument: docRef.id, videoUrl: docRef });
         } else {
-            return res.status(500).json({error: "Failed to generate video"});
+            return res.status(500).json({ error: "Failed to generate video" });
         }
     } catch (err) {
         log("REQUEST_FAILED", { error: err.message, stack: err.stack });

@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "abhay",
+    "dev",
+    "main"
+  ],
+  "parent": {
+    "abhay": "main",
+    "dev": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "abhay",
+    "dev"
+  ]
+}
